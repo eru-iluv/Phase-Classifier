@@ -20,6 +20,9 @@ class Hamiltonian:
         self._kroned_identities = [ 
                 eye(utils.spin_states[spin]**i) for i in range(0,n-1)
             ]
+        self._gstate = None # ground state
+        self._gstate_wf = None # ground state wavefunction
+
     @property
     def n(self) -> int:
         return self._n
@@ -29,7 +32,18 @@ class Hamiltonian:
     @property
     def matrix_dim(self) -> int:
         return self._matrix.shape[0]
+    @property
+    def gstate(self) -> np.complex128:
+        if self._gstate is None:
+            self._gstate, self._gstate_wf = linalg.eigs(self._matrix, k=1, which='LM')
+        return self._gstate
     
+    @property
+    def gstate_wf(self):
+        if self._gstate_wf is None:
+            self._gstate
+        return self._gstate_wf
+
     def kroned_identity(self, index) -> np.array:
         
         return self._kroned_identities[index]
@@ -151,9 +165,9 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         D = {self.D}.\n"""
 
 
-'''eigvalues, eigvec =  linalg.eigs(x._matrix, k=1)
+x = BondAlternatingXXZ(8, 1, 1)
 
-eigvalue = eigvalues[0],
-eigvec = eigvec[:,0]
+eigvalues, eigvec =  linalg.eigs(x._matrix, k = 4)
 
-print(eigvalue, eigvec)'''
+print(eigvalues)
+del x
