@@ -1,4 +1,4 @@
-import utils;
+import utils
 import numpy as np
 from scipy.sparse import csr_array, kron, eye, linalg
 
@@ -18,7 +18,7 @@ class Hamiltonian:
         self._matrix =csr_array((utils.spin_states[spin]**self._n, 
             utils.spin_states[spin]**self._n), dtype=np.complex64)
         self._kroned_identities = [ 
-                eye(utils.spin_states[spin]**i) for i in range(0,n-1)
+                eye(utils.spin_states[spin]**i) for i in range(0,n)
             ]
         self._gstate = None # ground state
         self._gstate_wf = None # ground state wavefunction
@@ -35,15 +35,9 @@ class Hamiltonian:
     @property
     def gstate(self) -> np.complex128:
         if self._gstate is None:
-            self._gstate, self._gstate_wf = linalg.eigs(self._matrix, k=1, which='LM')
+            self._gstate = linalg.eigsh(self._matrix, k=1, which='LM')[1][:,0]
         return self._gstate
     
-    @property
-    def gstate_wf(self):
-        if self._gstate_wf is None:
-            self._gstate
-        return self._gstate_wf
-
     def kroned_identity(self, index) -> np.array:
         
         return self._kroned_identities[index]
@@ -164,10 +158,3 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         Jz = {self.Jz} 
         D = {self.D}.\n"""
 
-
-x = BondAlternatingXXZ(8, 1, 1)
-
-eigvalues, eigvec =  linalg.eigs(x._matrix, k = 4)
-
-print(eigvalues)
-del x
