@@ -15,8 +15,8 @@ spin_operators = {
     },
 
     '1/2': {
-        'Sz' : np.array([[1,0],[0,-1]])/2,
-        'Sx' : np.array([[0,1],[1,0]])/2,
-        'Sy' : np.array([[0,-1j],[1j,0]])/2,
+        'Sz' : csr_matrix(np.array([[1,0],[0,-1]])/2),
+        'Sx' : csr_matrix( np.array([[0,1],[1,0]])/2),
+        'Sy' : csr_matrix(np.array([[0,-1j],[1j,0]])/2),
     }
 }
