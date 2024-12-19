@@ -15,7 +15,7 @@ class Hamiltonian:
 
         self._n = n
         self._spin = spin
-        self._matrix =csr_array((utils.spin_states[spin]**self._n, 
+        self._matrix = csr_array((utils.spin_states[spin]**self._n, 
             utils.spin_states[spin]**self._n), dtype=np.complex64)
         self._kroned_identities = [ 
                 eye(utils.spin_states[spin]**i) for i in range(0,n)
@@ -36,6 +36,7 @@ class Hamiltonian:
     def gstate(self) -> np.complex128:
         if self._gstate is None:
             self._gstate = linalg.eigsh(self._matrix, k=1, which='LM')[1][:,0]
+            self._gstate = self._gstate/np.linalg.norm(self._gstate)
         return self._gstate
     
     def kroned_identity(self, index) -> np.array:
@@ -157,4 +158,3 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         f"""XXZ chains with uniaxial single-ion-type anisotropy,\n\nHamiltonian properties:
         Jz = {self.Jz} 
         D = {self.D}.\n"""
-
