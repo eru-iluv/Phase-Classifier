@@ -1,6 +1,5 @@
 import utils
-import numpy as np
-from scipy.sparse import kron, eye, linalg
+from scipy.sparse import kron, eye
 
 class Correlators:
     def __init__(self, n, spin='1'):
@@ -39,7 +38,3 @@ class Correlators:
     def prodSiy(self): return self._prodSiy
     @property
     def prodSiz(self): return self._prodSiz
-
-def is_hermitian(matrix):
-    # Check if the matrix is equal to its conjugate transpose
-    return (matrix != matrix.getH()).nnz == 0

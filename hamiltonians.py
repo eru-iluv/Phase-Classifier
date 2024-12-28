@@ -59,6 +59,7 @@ class Hamiltonian:
     def __str__(self):
         return f"Hamiltonian of {self.n} spins of value {self.spin}"
 
+
 class BondAlternatingXXZ(Hamiltonian):
     def __init__(self, n, Delta, delta, spin='1'):
         """
@@ -112,13 +113,13 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         Parameters
         ----------
         n : int
-            Number of spins in the system
+            Number of spins in the system.
         J : float
-            Spin coupling parameter in the xy-axis
+            Spin coupling parameter in the xy-axis. Defaults to 1.
         Jz : float
-            Spin coupling parameter in the z-axis
+            Spin coupling parameter in the z-axis.
         D : float
-            Uniaxial single ion anisotropy parameter
+            Uniaxial single ion anisotropy parameter.
         spin: str
             Spin value of the system.
         """
@@ -137,8 +138,6 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sy'], J)  # S_N^y S_1^y term  
         self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sz'], Jz) # S_N^z S_1^z term
         self._matrix += self._build_anisotropy(n-1, utils.spin_operators[spin]['Sz2'], D)   # S_l^z2 term
-
-        self._matrix = csr_array(self._matrix)
     
     def _build_anisotropy(self, i, operator, coeff):
         return kron(
@@ -158,3 +157,54 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         f"""XXZ chains with uniaxial single-ion-type anisotropy,\n\nHamiltonian properties:
         Jz = {self.Jz} 
         D = {self.D}.\n"""
+
+
+
+class BilinearBiquadratic(Hamiltonian):
+    def __init__(self, n, theta, spin='1'):
+        """
+        Parameters
+        ----------
+        n : int
+            Number of spins in the system.
+        theta : float
+            Spin coupling parameter.
+        spin: str
+            Spin value of the system.
+        """
+        super().__init__(n, spin)
+        self._theta = theta 
+
+        # Build the Hamiltonian matrix for the non-cyclic terms
+        arg1 = np.cos(theta)
+        arg2 = np.sin(theta)
+
+        for l in range(n-1):
+            X_term =  self._build_term(l, utils.spin_operators[spin]['Sx'], 1)
+            Y_term = self._build_term(l, utils.spin_operators[spin]['Sy'], 1)
+            Z_term = self._build_term(l, utils.spin_operators[spin]['Sz'], 1)
+
+
+            # linear
+            self._matrix += arg1*X_term + arg2*(X_term@X_term)    # S_l^x S_{l+1}^x term
+            self._matrix += arg1*Y_term + arg2*(Y_term@Y_term)   # S_l^y S_{l+1}^y term
+            self._matrix += arg1*Z_term + arg2*(Z_term@Z_term)   # S_l^z S_{l+1}^z term
+            #quadratic
+            
+        # Cyclical terms
+        X_term = self._cyclical_term(utils.spin_operators[spin]['Sx'], 1)
+        Y_term = self._cyclical_term(utils.spin_operators[spin]['Sy'], 1)
+        Z_term = self._cyclical_term(utils.spin_operators[spin]['Sz'], 1)
+
+        self._matrix += arg1*X_term + arg2*(X_term@X_term) # S_N^x S_1^x term
+        self._matrix += arg1*Y_term + arg2*(Y_term@Y_term) # S_N^y S_1^y term
+        self._matrix += arg1*Z_term + arg2*(Z_term@Z_term) # S_N^z S_1^z term
+
+    @property
+    def theta(self):
+        return self._theta
+    
+    def __str__(self):
+        return super().__str__()  +  \
+        f"""Bilinear Biquadratic Chain.,\n\nHamiltonian properties:
+        θ = {self.theta}\n"""
