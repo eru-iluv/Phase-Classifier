@@ -21,7 +21,6 @@ class Hamiltonian:
                 eye(utils.spin_states[spin]**i) for i in range(0,n)
             ]
         self._gstate = None # ground state
-        self._gstate_wf = None # ground state wavefunction
 
     @property
     def n(self) -> int:
@@ -35,7 +34,7 @@ class Hamiltonian:
     @property
     def gstate(self) -> np.complex128:
         if self._gstate is None:
-            self._gstate = linalg.eigsh(self._matrix, k=1, which='LM')[1][:,0]
+            self._gstate = linalg.eigsh(self._matrix, k=1, which='SA')[1][:,0]
             self._gstate = self._gstate/np.linalg.norm(self._gstate)
         return self._gstate
     
@@ -43,18 +42,18 @@ class Hamiltonian:
         
         return self._kroned_identities[index]
 
-    def _build_term(self, i, operator, coeff):
+    def _build_term(self, i, operator):
         return kron(
         kron(self.kroned_identity(i), operator),
         kron(operator, self.kroned_identity(self._n - 2 - i))
-    ) * coeff
+    )
 
-    def _cyclical_term(self, operator, coeff):
+    def _cyclical_term(self, operator):
         return kron(
             operator, kron(
             self.kroned_identity(self._n - 2),
             operator)
-        ) * coeff
+        )
 
     def __str__(self):
         return f"Hamiltonian of {self.n} spins of value {self.spin}"
@@ -81,24 +80,23 @@ class BondAlternatingXXZ(Hamiltonian):
         # Build the Hamiltonian matrix for the non-cyclic terms
         for l in range(n-1):
             coeff = 1 - delta * (-1)**(l+1)
-            self._matrix += self._build_term(l, utils.spin_operators[spin]['Sx'], coeff)   # S_l^x S_{l+1}^x term
-            self._matrix += self._build_term(l, utils.spin_operators[spin]['Sy'], coeff)   # S_l^y S_{l+1}^y term
-            self._matrix += self._build_term(l, utils.spin_operators[spin]['Sz'], Delta * coeff)   # S_l^z S_{l+1}^z term
+            self._matrix += coeff*self._build_term(l, utils.spin_operators[spin]['Sx'])   # S_l^x S_{l+1}^x term
+            self._matrix += coeff*self._build_term(l, utils.spin_operators[spin]['Sy'])   # S_l^y S_{l+1}^y term
+            self._matrix += Delta*coeff*self._build_term(l, utils.spin_operators[spin]['Sz']) # Δ (S_l^z S_{l+1}^z) term
 
         # Cyclical terms
         coeff = 1 - delta * (-1)**n
-        self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sx'], coeff)  # S_N^x S_1^x term
-        self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sy'], coeff)  # S_N^y S_1^y term  
-        self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sz'], Delta * coeff) # S_N^z S_1^z term
+        self._matrix += coeff*self._cyclical_term(utils.spin_operators[spin]['Sx'])  # S_N^x S_1^x term
+        self._matrix += coeff*self._cyclical_term(utils.spin_operators[spin]['Sy'])  # S_N^y S_1^y term  
+        self._matrix += Delta*coeff*self._cyclical_term(utils.spin_operators[spin]['Sz']) # Δ (S_N^z S_1^z) term
 
-        self._matrix = csr_array(self._matrix)
     
     @property
     def Delta(self):
         return self._Delta
     @property
     def delta(self):
-        return self._Delta
+        return self._delta
     
     def __str__(self):
         return super().__str__()  +  \
@@ -129,29 +127,28 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
 
         # Build the Hamiltonian matrix for the non-cyclic terms
         for l in range(n-1):
-            self._matrix += self._build_term(l, utils.spin_operators[spin]['Sx'], J)   # S_l^x S_{l+1}^x term
-            self._matrix += self._build_term(l, utils.spin_operators[spin]['Sy'], J)   # S_l^y S_{l+1}^y term
-            self._matrix += self._build_term(l, utils.spin_operators[spin]['Sz'], Jz)   # S_l^z S_{l+1}^z term
-            self._matrix += self._build_anisotropy(l, utils.spin_operators[spin]['Sz2'], D)   # S_l^z2 term
+            self._matrix += J*self._build_term(l, utils.spin_operators[spin]['Sx'])   # S_l^x S_{l+1}^x term
+            self._matrix += J*self._build_term(l, utils.spin_operators[spin]['Sy'])   # S_l^y S_{l+1}^y term
+            self._matrix += Jz*self._build_term(l, utils.spin_operators[spin]['Sz'])   # S_l^z S_{l+1}^z term
+            self._matrix += D*self._build_anisotropy(l, utils.spin_operators[spin]['Sz2'])   # S_l^z2 term
         # Cyclical terms
-        self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sx'], J)  # S_N^x S_1^x term
-        self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sy'], J)  # S_N^y S_1^y term  
-        self._matrix += self._cyclical_term(utils.spin_operators[spin]['Sz'], Jz) # S_N^z S_1^z term
-        self._matrix += self._build_anisotropy(n-1, utils.spin_operators[spin]['Sz2'], D)   # S_l^z2 term
+        self._matrix += J*self._cyclical_term(utils.spin_operators[spin]['Sx'])  # S_N^x S_1^x term
+        self._matrix += J*self._cyclical_term(utils.spin_operators[spin]['Sy'])  # S_N^y S_1^y term  
+        self._matrix += Jz*self._cyclical_term(utils.spin_operators[spin]['Sz']) # S_N^z S_1^z term
+        self._matrix += D*self._build_anisotropy(n-1, utils.spin_operators[spin]['Sz2'])   # S_l^z2 term
     
-    def _build_anisotropy(self, i, operator, coeff):
+    def _build_anisotropy(self, i, operator):
         return kron(
         kron(self.kroned_identity(i), operator),
         self.kroned_identity(self._n - 1 - i)
-    ) * coeff
+    )
     
     @property
-    def Delta(self):
-        return self._Delta
+    def Jz(self):
+        return self._Jz
     @property
-    def delta(self):
-        return self._Delta
-    
+    def D(self):
+        return self._delta
     def __str__(self):
         return super().__str__()  +  \
         f"""XXZ chains with uniaxial single-ion-type anisotropy,\n\nHamiltonian properties:
@@ -180,21 +177,21 @@ class BilinearBiquadratic(Hamiltonian):
         arg2 = np.sin(theta)
 
         for l in range(n-1):
-            X_term =  self._build_term(l, utils.spin_operators[spin]['Sx'], 1)
-            Y_term = self._build_term(l, utils.spin_operators[spin]['Sy'], 1)
-            Z_term = self._build_term(l, utils.spin_operators[spin]['Sz'], 1)
+            X_term =  self._build_term(l, utils.spin_operators[spin]['Sx'])
+            Y_term = self._build_term(l, utils.spin_operators[spin]['Sy'])
+            Z_term = self._build_term(l, utils.spin_operators[spin]['Sz'])
 
 
-            # linear
+            # linear and quadratic terms
             self._matrix += arg1*X_term + arg2*(X_term@X_term)    # S_l^x S_{l+1}^x term
             self._matrix += arg1*Y_term + arg2*(Y_term@Y_term)   # S_l^y S_{l+1}^y term
             self._matrix += arg1*Z_term + arg2*(Z_term@Z_term)   # S_l^z S_{l+1}^z term
             #quadratic
             
         # Cyclical terms
-        X_term = self._cyclical_term(utils.spin_operators[spin]['Sx'], 1)
-        Y_term = self._cyclical_term(utils.spin_operators[spin]['Sy'], 1)
-        Z_term = self._cyclical_term(utils.spin_operators[spin]['Sz'], 1)
+        X_term = self._cyclical_term(utils.spin_operators[spin]['Sx'])
+        Y_term = self._cyclical_term(utils.spin_operators[spin]['Sy'])
+        Z_term = self._cyclical_term(utils.spin_operators[spin]['Sz'])
 
         self._matrix += arg1*X_term + arg2*(X_term@X_term) # S_N^x S_1^x term
         self._matrix += arg1*Y_term + arg2*(Y_term@Y_term) # S_N^y S_1^y term

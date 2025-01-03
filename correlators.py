@@ -6,10 +6,18 @@ class Correlators:
         self._n = n
         self._spin = spin
         
-        i_sup = int(n/2 + 1)        
-        self._S1Six_array = [self._build_S1Si(i, utils.spin_operators[spin]['Sx']) for i in range(i_sup)]
-        self._S1Siy_array = [self._build_S1Si(i, utils.spin_operators[spin]['Sy']) for i in range(i_sup)]
-        self._S1Siz_array = [self._build_S1Si(i, utils.spin_operators[spin]['Sz']) for i in range(i_sup)]
+        i_sup = int(n/2 + 1) 
+       
+        self._S1Six_array = [kron(utils.spin_operators[spin]['Sx2'], eye(utils.spin_states[spin]**(n-1)))] + \
+            [self._build_S1Si(i, utils.spin_operators[spin]['Sx']) for i in range(1, i_sup)]
+        
+        self._S1Siy_array = [kron(utils.spin_operators[spin]['Sy2'], eye(utils.spin_states[spin]**(n-1)))] + \
+            [self._build_S1Si(i, utils.spin_operators[spin]['Sy']) for i in range(1, i_sup)]
+
+        
+        self._S1Siz_array = [kron(utils.spin_operators[spin]['Sz2'], eye(utils.spin_states[spin]**(n-1)))] + \
+            [self._build_S1Si(i, utils.spin_operators[spin]['Sz']) for i in range(1, i_sup)]
+        
         self._prodSix = self._build_prodSi(utils.spin_operators[spin]['Sx'])
         self._prodSiy = self._build_prodSi(utils.spin_operators[spin]['Sy'])
         self._prodSiz = self._build_prodSi(utils.spin_operators[spin]['Sz'])
@@ -23,7 +31,7 @@ class Correlators:
     def _build_S1Si(self, i, operator):
         S1Si = operator
         for j in range(1, self._n):
-            if i == j+1:
+            if i+1 == j:
                 S1Si = kron(S1Si, operator) 
             else: S1Si = kron(S1Si, eye(3, 3));
         return S1Si
