@@ -16,7 +16,7 @@ class Hamiltonian:
         self._n = n
         self._spin = spin
         self._matrix = csr_array((utils.spin_states[spin]**self._n, 
-            utils.spin_states[spin]**self._n), dtype=np.complex64)
+            utils.spin_states[spin]**self._n), dtype=np.complex128)
         self._kroned_identities = [ 
                 eye(utils.spin_states[spin]**i) for i in range(0,n)
             ]
@@ -32,26 +32,26 @@ class Hamiltonian:
     def matrix_dim(self) -> int:
         return self._matrix.shape[0]
     @property
-    def gstate(self) -> np.complex128:
+    def gstate(self) -> np.array:
         if self._gstate is None:
-            self._gstate = linalg.eigsh(self._matrix, k=1, which='SA')[1][:,0]
-            self._gstate = self._gstate/np.linalg.norm(self._gstate)
+            self._gstate = linalg.eigsh(self._matrix, k=1, which='SA')[1][:,0] 
+            self._gstate = self._gstate / np.linalg.norm(self._gstate)
         return self._gstate
     
-    def kroned_identity(self, index) -> np.array:
+    def kroned_identity(self, index) -> csr_array:
         
         return self._kroned_identities[index]
 
     def _build_term(self, i, operator):
         return kron(
         kron(self.kroned_identity(i), operator),
-        kron(operator, self.kroned_identity(self._n - 2 - i))
+        kron(operator, self.kroned_identity(self.n - 2 - i))
     )
 
     def _cyclical_term(self, operator):
         return kron(
             operator, kron(
-            self.kroned_identity(self._n - 2),
+            self.kroned_identity(self.n - 2),
             operator)
         )
 
@@ -148,7 +148,7 @@ class XXZUniaxialSingleIonAnisotropy(Hamiltonian):
         return self._Jz
     @property
     def D(self):
-        return self._delta
+        return self._D
     def __str__(self):
         return super().__str__()  +  \
         f"""XXZ chains with uniaxial single-ion-type anisotropy,\n\nHamiltonian properties:
@@ -183,9 +183,9 @@ class BilinearBiquadratic(Hamiltonian):
 
 
             # linear and quadratic terms
-            self._matrix += arg1*X_term + arg2*(X_term@X_term)    # S_l^x S_{l+1}^x term
-            self._matrix += arg1*Y_term + arg2*(Y_term@Y_term)   # S_l^y S_{l+1}^y term
-            self._matrix += arg1*Z_term + arg2*(Z_term@Z_term)   # S_l^z S_{l+1}^z term
+            self._matrix += arg1*X_term + arg2*(X_term @ X_term)    # S_l^x S_{l+1}^x term
+            self._matrix += arg1*Y_term + arg2*(Y_term @ Y_term)   # S_l^y S_{l+1}^y term
+            self._matrix += arg1*Z_term + arg2*(Z_term @ Z_term)   # S_l^z S_{l+1}^z term
             #quadratic
             
         # Cyclical terms
@@ -193,9 +193,9 @@ class BilinearBiquadratic(Hamiltonian):
         Y_term = self._cyclical_term(utils.spin_operators[spin]['Sy'])
         Z_term = self._cyclical_term(utils.spin_operators[spin]['Sz'])
 
-        self._matrix += arg1*X_term + arg2*(X_term@X_term) # S_N^x S_1^x term
-        self._matrix += arg1*Y_term + arg2*(Y_term@Y_term) # S_N^y S_1^y term
-        self._matrix += arg1*Z_term + arg2*(Z_term@Z_term) # S_N^z S_1^z term
+        self._matrix += arg1*X_term + arg2*(X_term @ X_term) # S_N^x S_1^x term
+        self._matrix += arg1*Y_term + arg2*(Y_term @ Y_term) # S_N^y S_1^y term
+        self._matrix += arg1*Z_term + arg2*(Z_term @ Z_term) # S_N^z S_1^z term
 
     @property
     def theta(self):

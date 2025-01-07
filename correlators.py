@@ -23,7 +23,7 @@ class Correlators:
         self._prodSiz = self._build_prodSi(utils.spin_operators[spin]['Sz'])
 
     def _build_prodSi(self, operator):
-        prodSi = eye(1,1) 
+        prodSi = eye(1) 
         for j in range(self._n):
             prodSi = kron(prodSi, operator)
         return prodSi
@@ -33,7 +33,8 @@ class Correlators:
         for j in range(1, self._n):
             if i+1 == j:
                 S1Si = kron(S1Si, operator) 
-            else: S1Si = kron(S1Si, eye(3, 3));
+            else: 
+                S1Si = kron(S1Si, eye(utils.spin_states[self._spin]));
         return S1Si
     
     def S1Six(self, i): return self._S1Six_array[i]
