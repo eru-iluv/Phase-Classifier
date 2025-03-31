@@ -103,6 +103,6 @@ def generate_data(N, to_generate = ['H1', 'H2', 'H3']):
 
 
 start = timer()
-generate_data(4)
+generate_data(10)
 duration = timer() - start
 print(f"Duration: {duration} seconds")

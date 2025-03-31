@@ -38,8 +38,7 @@ class Hamiltonian:
             self._gstate = self._gstate / np.linalg.norm(self._gstate)
         return self._gstate
     
-    def kroned_identity(self, index) -> csr_array:
-        
+    def kroned_identity(self, index) -> csr_array:        
         return self._kroned_identities[index]
 
     def _build_term(self, i, operator):
